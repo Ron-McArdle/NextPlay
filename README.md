@@ -1,4 +1,4 @@
-# Game Recomender System
+# NextPlay
 ## Steam Content-Based RS
 ![intro](images/social-og.jpg)
 
