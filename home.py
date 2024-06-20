@@ -3,148 +3,181 @@ import pandas as pd
 import numpy as np
 import pickle
 
-st.set_page_config(page_title='NextPlay',
-                   page_icon='🎮',
-                   layout="wide")
+st.set_page_config(page_title='NextPlay', page_icon='🎮', layout="wide")
 
-# DATASETS
-
+# Load datasets
 l_data = pd.read_csv('data extraction and preprocessing/data3.csv')
-l_data.drop(['Unnamed: 0','Unnamed: 0.1'],axis=1)
+l_data.drop(['Unnamed: 0', 'Unnamed: 0.1'], axis=1, inplace=True)
+similarity = pickle.load(open('data/similarity.pkl', 'rb'))
 
-similarity = pickle.load(open('data/similarity.pkl','rb'))
+# Session state to check if user data is submitted
+if 'submitted' not in st.session_state:
+    st.session_state.submitted = False
 
+# Function to display the main page
+def display_main_page():
+    st.title('🎮 NextPlay 🎮')
 
+    st.write("Imagine you're wandering through a vast library of games, and suddenly, a quirky little friend pops up, saying, ")
 
-# MAINPAGE
+    st.markdown("""<div style="text-align: center;">
+                        <p><em><strong>"Hey there! Feeling lost in this jungle of pixels? Let me be your guide!"</strong></em></p>
+                    </div>
+                """, unsafe_allow_html=True)
 
-st.title('🎮 NextPlay 🎮')
+    st.write("That's what a game recommender system is like—it's your trusty sidekick in the world of gaming, "
+             "helping you find the perfect game without getting lost in the maze of choices."
+             " Think of it as your own personal game genie 🧞‍♂️, but instead of granting wishes, it grants you "
+             "hours of entertainment and fun! It's like having a friend who knows you better than you know "
+             "yourself when it comes to gaming...")
 
-st.write("Imagine you're wandering through a vast library of games, and suddenly, a quirky little friend pops up, saying, ")
+    st.write("\nSo, next time you're scratching your head, wondering what "
+             "game to play next, just come here and follow the set of instructions on the sidebar!")
 
-st.markdown("""<div style="text-align: center;">
-                    <p><em><strong>"Hey there! Feeling lost in this jungle of pixels? Let me be your guide!"</strong></em></p>
-                </div>
-            """, unsafe_allow_html=True)
+    # Recommendation based on preferences
+    st.write("<h4>Recommended games based on your preferences</h4>", unsafe_allow_html=True)
 
-st.write("That's what a game recommender system is like—it's your trusty sidekick in the world of gaming, "
-         "helping you find the perfect game without getting lost in the maze of choices."
-         " Think of it as your own personal game genie 🧞‍♂️, but instead of granting wishes, it grants you "
-         "hours of entertainment and fun! It's like having a friend who knows you better than you know "
-         "yourself when it comes to gaming...")
+    col1, col2 = st.columns(2)
 
-st.write("\nSo, next time you're scratching your head, wondering what "
-         "game to play next, just come here and follow the set of instructions on the sidebar!")
-
-
-
-# RECOMMENDATION
-
-st.write("<h4>Choose games here</h4>", unsafe_allow_html=True)
+    for preference in st.session_state.preferences:
+        st.write(f"### {preference} Games:")
+        filtered_games = l_data[l_data['Tags'].str.contains(preference, case=False, na=False)].head(2)
         
-games = st.multiselect('', l_data['name'], [], key='games')
-        
-recommed = st.button('Recommend')
-col1,col2 = st.columns(2)
+        for i, row in filtered_games.iterrows():
+            with col1 if i % 2 == 0 else col2:
+                st.markdown("""
+                            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                            <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                            <div style="text-align: center;">
+                                <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
+                                <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
+                            </div>
+                            </div>
+                            """.format(link=row["Steam Page"], image=row["header_image"], name=row["name"], developer=row['developer']), unsafe_allow_html=True)
 
-if recommed:
-    top_recommendations = []
+    # Sidebar instructions
+    st.sidebar.header("Set of instructions 🙂")
+    st.sidebar.markdown("1. Choose a game from the dropdown menu.")
+    st.sidebar.markdown("2. Click the 'Recommend' button.")
+    st.sidebar.markdown("3. Explore the recommended games.")
+    st.sidebar.markdown("4. Click on image to visit Steam page. ")
+    st.sidebar.markdown("5. Enjoy!")
+    st.sidebar.markdown('---')
+
+    # Sidebar tags
+    st.write("<h4>Choose previously played game here</h4>", unsafe_allow_html=True)
+
+    games = st.multiselect('', l_data['name'], [], key='games')
+
+    recommed = st.button('Recommend')
+    col1, col2 = st.columns(2)
+
+    if recommed:
+        top_recommendations = []
+
+        for game in games:
+            index = l_data[l_data['name'] == game].index[0]
+            top_six = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])[1:7]
+            top_recommendations.extend([top_six[i][0] for i in range(len(top_six))])
+
+        top_recommendations = list(set(top_recommendations))[:6]
+
+        for i, k in enumerate(top_recommendations):
+            if i % 2 == 0:
+                with col1:
+                    st.markdown("""
+                                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                                <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                                <div style="text-align: center;">
+                                    <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
+                                    <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
+                                </div>
+                                </div>
+                                """.format(link=l_data["Steam Page"][k], image=l_data["header_image"][k], name=l_data["name"][k], developer=l_data['developer'][k]), unsafe_allow_html=True)
+            else:
+                with col2:
+                    st.markdown("""
+                                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                                <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                                <div style="text-align: center;">
+                                    <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
+                                    <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
+                                </div>
+                                </div>
+                                """.format(link=l_data["Steam Page"][k], image=l_data["header_image"][k], name=l_data["name"][k], developer=l_data['developer'][k]), unsafe_allow_html=True)
 
     for game in games:
-        index = l_data[l_data['name'] == game].index[0]
-        top_six = sorted(list(enumerate(similarity[index])),reverse=True,key=lambda x:x[1])[1:7]
-        top_recommendations.extend([top_six[i][0] for i in range(len(top_six))]) 
+        selected_game_categories = l_data.loc[l_data['name'] == game, 'Tags'].iloc[0]
 
-    top_recommendations = list(set(top_recommendations))[:6]
-            
-    for i, k in enumerate(top_recommendations):
+        if selected_game_categories:
+            st.sidebar.subheader(f"The chosen game '{game}' belongs to:")
+            categories_list = selected_game_categories.split(',')
+            for category in categories_list:
+                st.sidebar.write(f"- {category.strip()}")
+
+    # Trending games
+    st.markdown('---')
+
+    trending = st.subheader('Trending games')
+
+    st.write("**Need a break from reality?** 🙃")
+
+    st.write("\nGames offer the perfect escape! They whisk us away to fantastical realms, where we can "
+             "embark on thrilling adventures, solve mind-bending puzzles, or simply unwind after a long day."
+             " Whether you're battling dragons in a mythical land or building your dream city from scratch, "
+             "games provide a welcome reprieve from the stresses of everyday life. ")
+
+    st.write("\nDive into the world of gaming and discover why millions around the globe turn to Steam for their dose of fun and relaxation. "
+             "Check out the trending games on Steam now and treat yourself to some well-deserved entertainment! **Click on the image...**")
+
+    col3, col4 = st.columns(2)
+    for i in range(4):
         if i % 2 == 0:
-            with col1:
+            with col3:
                 st.markdown("""
-                            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                            <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
-                            <div style="text-align: center;">
-                                <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                                <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
-                            </div>
-                            </div>
-                            """.format(link=l_data["Steam Page"][k], image=l_data["header_image"][k], name=l_data["name"][k], developer=l_data['developer'][k]), unsafe_allow_html=True)
+                    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                    <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                    <div style="text-align: center;">
+                        <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
+                        <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
+                    </div>
+                    </div>
+                    """.format(link=l_data["Steam Page"][i], image=l_data["header_image"][i], name=l_data["name"][i], developer=l_data['developer'][i]), unsafe_allow_html=True)
         else:
-            with col2:
+            with col4:
                 st.markdown("""
-                            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                            <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
-                            <div style="text-align: center;">
-                                <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                                <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
-                            </div>
-                            </div>
-                            """.format(link=l_data["Steam Page"][k], image=l_data["header_image"][k], name=l_data["name"][k], developer=l_data['developer'][k]), unsafe_allow_html=True)
- 
+                    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                    <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                    <div style="text-align: center;">
+                        <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
+                        <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
+                    </div>
+                    </div>
+                    """.format(link=l_data["Steam Page"][i], image=l_data["header_image"][i], name=l_data["name"][i], developer=l_data['developer'][i]), unsafe_allow_html=True)
+                
+                
+                
+# Main logic
+if not st.session_state.submitted:
+    st.title('Welcome to NextPlay!')
+    st.write("Before we get started, we'd like to know a little more about you.")
 
-
-# SIDEBAR
-# sidebar.instructions
-st.sidebar.header("Set of instructions 🙂")
-
-st.sidebar.markdown("1. Choose a game from the dropdown menu.")
-st.sidebar.markdown("2. Click the 'Recommend' button.")
-st.sidebar.markdown("3. Explore the recommended games.")
-st.sidebar.markdown("4. Click on image to visit Steam page. ")
-st.sidebar.markdown("5. Enjoy!")
-
-st.sidebar.markdown('---')
-
-# sidebar.tags
-for game in games:
-    selected_game_categories = l_data.loc[l_data['name'] == game, 'Tags'].iloc[0]
-    
-    if selected_game_categories:
-        st.sidebar.subheader(f"The chosen game '{game}' belongs to:")
-        categories_list = selected_game_categories.split(',')
-        for category in categories_list:
-            st.sidebar.write(f"- {category.strip()}")
-
-
-
-# TRENDING
-
-st.markdown('---')
-  
-trending = st.subheader('Trending games')
-
-st.write("**Need a break from reality?** 🙃")
-
-st.write("\nGames offer the perfect escape! They whisk us away to fantastical realms, where we can "
-                 "embark on thrilling adventures, solve mind-bending puzzles, or simply unwind after a long day."
-                 " Whether you're battling dragons in a mythical land or building your dream city from scratch, "
-                 "games provide a welcome reprieve from the stresses of everyday life. ")
+    with st.form("user_info_form"):
+        age = st.number_input("Please enter your age:", min_value=1, max_value=120)
+        gaming_hours = st.number_input("How many hours do you spend gaming each week?", min_value=0)
         
-st.write("\nDive into the world of gaming and discover why millions around the globe turn to Steam for their dose of fun and relaxation. "
-                 "Check out the trending games on Steam now and treat yourself to some well-deserved entertainment! **Click on the image...**")
-                 
+        preferences = st.multiselect(
+            "Select your game preferences:",
+            ['Action', 'Adventure', 'Action-Adventure', 'Puzzle', 'RPG', 'Shooter', 'Sports', 'Strategy', 'Simulation', 'Casual']
+        )
+        
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            st.session_state.submitted = True
+            st.session_state.age = age
+            st.session_state.gaming_hours = gaming_hours
+            st.session_state.preferences = preferences
+            st.experimental_rerun()
 
-col3, col4 = st.columns(2)
-for i in range(4):
-            if i % 2 == 0:
-                with col3:
-                    st.markdown("""
-                        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                        <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
-                        <div style="text-align: center;">
-                            <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                            <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
-                        </div>
-                        </div>
-                        """.format(link=l_data["Steam Page"][i], image=l_data["header_image"][i], name=l_data['name'][i], developer=l_data['developer'][i]), unsafe_allow_html=True)
-            else:
-                with col4:
-                    st.markdown("""
-                        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                        <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
-                        <div style="text-align: center;">
-                            <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                            <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
-                        </div>
-                        </div>
-                        """.format(link=l_data["Steam Page"][i], image=l_data["header_image"][i], name=l_data['name'][i], developer=l_data['developer'][i]), unsafe_allow_html=True)
+if st.session_state.submitted:
+    display_main_page()
