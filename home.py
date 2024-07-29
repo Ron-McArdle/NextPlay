@@ -13,6 +13,8 @@ similarity = pickle.load(open('data/similarity.pkl', 'rb'))
 # Session state to check if user data is submitted
 if 'submitted' not in st.session_state:
     st.session_state.submitted = False
+if 'guardian_confirmed' not in st.session_state:
+    st.session_state.guardian_confirmed = False
 
 # Function to display the main page
 def display_main_page():
@@ -34,26 +36,28 @@ def display_main_page():
     st.write("\nSo, next time you're scratching your head, wondering what "
              "game to play next, just come here and follow the set of instructions on the sidebar!")
 
-    # Recommendation based on preferences
     st.write("<h4>Recommended games based on your preferences</h4>", unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-
+    
+    # Iterate through each preference and display relevant games
     for preference in st.session_state.preferences:
         st.write(f"### {preference} Games:")
-        filtered_games = l_data[l_data['Tags'].str.contains(preference, case=False, na=False)].head(2)
-        
-        for i, row in filtered_games.iterrows():
-            with col1 if i % 2 == 0 else col2:
-                st.markdown("""
-                            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                            <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
-                            <div style="text-align: center;">
-                                <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                                <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
-                            </div>
-                            </div>
-                            """.format(link=row["Steam Page"], image=row["header_image"], name=row["name"], developer=row['developer']), unsafe_allow_html=True)
+        filtered_games = l_data[l_data['Tags'].str.contains(preference, case=False, na=False)]
+
+        if not filtered_games.empty:
+            col1, col2 = st.columns(2)
+            for i, row in filtered_games.head(4).iterrows():
+                with col1 if i % 2 == 0 else col2:
+                    st.markdown(f"""
+                        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                        <a href="{row['Steam Page']}" target="_blank"><img src="{row['header_image']}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                        <div style="text-align: center;">
+                            <p style="margin: 0; font-size: 20px;"><b>Title: </b>{row['name']}</p>
+                            <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{row['developer']}</p>
+                        </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+        else:
+            st.write("No games available for this category.")
 
     # Sidebar instructions
     st.sidebar.header("Set of instructions 🙂")
@@ -65,7 +69,7 @@ def display_main_page():
     st.sidebar.markdown('---')
 
     # Sidebar tags
-    st.write("<h4>Choose previously played game here</h4>", unsafe_allow_html=True)
+    st.write("<h4>Choose games here</h4>", unsafe_allow_html=True)
 
     games = st.multiselect('', l_data['name'], [], key='games')
 
@@ -85,40 +89,31 @@ def display_main_page():
         for i, k in enumerate(top_recommendations):
             if i % 2 == 0:
                 with col1:
-                    st.markdown("""
-                                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                                <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
-                                <div style="text-align: center;">
-                                    <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                                    <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
-                                </div>
-                                </div>
-                                """.format(link=l_data["Steam Page"][k], image=l_data["header_image"][k], name=l_data["name"][k], developer=l_data['developer'][k]), unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                        <a href="{l_data['Steam Page'][k]}" target="_blank"><img src="{l_data['header_image'][k]}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                        <div style="text-align: center;">
+                            <p style="margin: 0; font-size: 20px;"><b>Title: </b>{l_data['name'][k]}</p>
+                            <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{l_data['developer'][k]}</p>
+                        </div>
+                        </div>
+                    """, unsafe_allow_html=True)
             else:
                 with col2:
-                    st.markdown("""
-                                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                                <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
-                                <div style="text-align: center;">
-                                    <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                                    <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
-                                </div>
-                                </div>
-                                """.format(link=l_data["Steam Page"][k], image=l_data["header_image"][k], name=l_data["name"][k], developer=l_data['developer'][k]), unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+                        <a href="{l_data['Steam Page'][k]}" target="_blank"><img src="{l_data['header_image'][k]}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                        <div style="text-align: center;">
+                            <p style="margin: 0; font-size: 20px;"><b>Title: </b>{l_data['name'][k]}</p>
+                            <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{l_data['developer'][k]}</p>
+                        </div>
+                        </div>
+                    """, unsafe_allow_html=True)
 
-    for game in games:
-        selected_game_categories = l_data.loc[l_data['name'] == game, 'Tags'].iloc[0]
-
-        if selected_game_categories:
-            st.sidebar.subheader(f"The chosen game '{game}' belongs to:")
-            categories_list = selected_game_categories.split(',')
-            for category in categories_list:
-                st.sidebar.write(f"- {category.strip()}")
-
-    # Trending games
+    # Trending games section
     st.markdown('---')
 
-    trending = st.subheader('Trending games')
+    st.subheader('Trending games')
 
     st.write("**Need a break from reality?** 🙃")
 
@@ -134,29 +129,27 @@ def display_main_page():
     for i in range(4):
         if i % 2 == 0:
             with col3:
-                st.markdown("""
+                st.markdown(f"""
                     <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                    <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                    <a href="{l_data['Steam Page'][i]}" target="_blank"><img src="{l_data['header_image'][i]}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
                     <div style="text-align: center;">
-                        <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                        <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
+                        <p style="margin: 0; font-size: 20px;"><b>Title: </b>{l_data['name'][i]}</p>
+                        <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{l_data['developer'][i]}</p>
                     </div>
                     </div>
-                    """.format(link=l_data["Steam Page"][i], image=l_data["header_image"][i], name=l_data["name"][i], developer=l_data['developer'][i]), unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
         else:
             with col4:
-                st.markdown("""
+                st.markdown(f"""
                     <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                    <a href="{link}" target="_blank"><img src="{image}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                    <a href="{l_data['Steam Page'][i]}" target="_blank"><img src="{l_data['header_image'][i]}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
                     <div style="text-align: center;">
-                        <p style="margin: 0; font-size: 20px;"><b>Title: </b>{name}</p>
-                        <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{developer}</p>
+                        <p style="margin: 0; font-size: 20px;"><b>Title: </b>{l_data['name'][i]}</p>
+                        <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{l_data['developer'][i]}</p>
                     </div>
                     </div>
-                    """.format(link=l_data["Steam Page"][i], image=l_data["header_image"][i], name=l_data["name"][i], developer=l_data['developer'][i]), unsafe_allow_html=True)
-                
-                
-                
+                """, unsafe_allow_html=True)
+
 # Main logic
 if not st.session_state.submitted:
     st.title('Welcome to NextPlay!')
@@ -164,7 +157,7 @@ if not st.session_state.submitted:
 
     with st.form("user_info_form"):
         age = st.number_input("Please enter your age:", min_value=1, max_value=120)
-        gaming_hours = st.number_input("How many hours do you spend gaming each week?", min_value=0)
+        gaming_hours = st.number_input("How many hours do you spend gaming each week?", min_value=0, max_value=15 if age < 17 else 168)
         
         preferences = st.multiselect(
             "Select your game preferences:",
@@ -173,11 +166,17 @@ if not st.session_state.submitted:
         
         submitted = st.form_submit_button("Submit")
         if submitted:
-            st.session_state.submitted = True
-            st.session_state.age = age
-            st.session_state.gaming_hours = gaming_hours
-            st.session_state.preferences = preferences
-            st.experimental_rerun()
+            if age < 14:
+                st.write("You must be at least 14 years old to use this platform.")
+                st.session_state.submitted = False
+                st.session_state.guardian_confirmed = False
+            else:
+                st.session_state.submitted = True
+                st.session_state.age = age
+                st.session_state.gaming_hours = gaming_hours
+                st.session_state.preferences = preferences
+                st.session_state.guardian_confirmed = True
+                st.experimental_rerun()
 
-if st.session_state.submitted:
+if st.session_state.submitted and st.session_state.guardian_confirmed:
     display_main_page()
