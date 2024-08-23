@@ -156,8 +156,8 @@ if not st.session_state.submitted:
     st.write("Before we get started, we'd like to know a little more about you.")
 
     with st.form("user_info_form"):
-        age = st.number_input("Please enter your age:", min_value=1, max_value=120)
-        gaming_hours = st.number_input("How many hours do you spend gaming each week?", min_value=0, max_value=15 if age < 17 else 168)
+        age = st.number_input("Please enter your age:", min_value=1, max_value=120, label_visibility="visible")
+        gaming_hours = st.number_input("How many hours do you spend gaming each week?", min_value=0, max_value=15 if age < 17 else 168, label_visibility="visible")
         
         preferences = st.multiselect(
             "Select your game preferences:",
@@ -176,7 +176,7 @@ if not st.session_state.submitted:
                 st.session_state.gaming_hours = gaming_hours
                 st.session_state.preferences = preferences
                 st.session_state.guardian_confirmed = True
-                st.experimental_rerun()
+                st.experimental_user()  # Force a rerun to refresh the page
 
 if st.session_state.submitted and st.session_state.guardian_confirmed:
     display_main_page()
