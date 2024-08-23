@@ -15,6 +15,8 @@ if 'submitted' not in st.session_state:
     st.session_state.submitted = False
 if 'guardian_confirmed' not in st.session_state:
     st.session_state.guardian_confirmed = False
+if 'display_main' not in st.session_state:
+    st.session_state.display_main = False
 
 # Function to display the main page
 def display_main_page():
@@ -161,7 +163,7 @@ if not st.session_state.submitted:
         
         preferences = st.multiselect(
             "Select your game preferences:",
-            ['Action', 'Adventure', 'Action-Adventure', 'Puzzle', 'RPG', 'Shooter', 'Sports', 'Strategy', 'Simulation', 'Casual']
+            ['Action', 'Adventure', 'Puzzle', 'RPG', 'Shooter', 'Sports', 'Strategy', 'Simulation', 'Casual']
         )
         
         submitted = st.form_submit_button("Submit")
@@ -176,7 +178,8 @@ if not st.session_state.submitted:
                 st.session_state.gaming_hours = gaming_hours
                 st.session_state.preferences = preferences
                 st.session_state.guardian_confirmed = True
-                st.experimental_user()  # Force a rerun to refresh the page
+                st.session_state.display_main = True  # Trigger the main page display
 
-if st.session_state.submitted and st.session_state.guardian_confirmed:
+if st.session_state.submitted and st.session_state.guardian_confirmed and st.session_state.display_main:
     display_main_page()
+    st.session_state.display_main = False  # Reset the flag
