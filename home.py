@@ -15,8 +15,6 @@ if 'submitted' not in st.session_state:
     st.session_state.submitted = False
 if 'guardian_confirmed' not in st.session_state:
     st.session_state.guardian_confirmed = False
-if 'display_main' not in st.session_state:
-    st.session_state.display_main = False
 
 # Function to display the main page
 def display_main_page():
@@ -47,17 +45,21 @@ def display_main_page():
 
         if not filtered_games.empty:
             col1, col2 = st.columns(2)
-            for i, row in filtered_games.head(4).iterrows():
+            for i in range(len(filtered_games.head(4))):
                 with col1 if i % 2 == 0 else col2:
                     st.markdown(f"""
                         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-                        <a href="{row['Steam Page']}" target="_blank"><img src="{row['header_image']}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
+                        <a href="{filtered_games.iloc[i]['Steam Page']}" target="_blank"><img src="{filtered_games.iloc[i]['header_image']}" style="width:500px;height:250px; margin-bottom: 10px;"></a>
                         <div style="text-align: center;">
-                            <p style="margin: 0; font-size: 20px;"><b>Title: </b>{row['name']}</p>
-                            <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{row['developer']}</p>
+                            <p style="margin: 0; font-size: 20px;"><b>Title: </b>{filtered_games.iloc[i]['name']}</p>
+                            <p style="margin: 0; font-size: 20px;"><b>Developer: </b>{filtered_games.iloc[i]['developer']}</p>
                         </div>
                         </div>
                     """, unsafe_allow_html=True)
+
+            # If there's an odd number of games, this will prevent the layout from breaking
+            if len(filtered_games.head(4)) % 2 != 0:
+                col2.markdown("<div style='visibility: hidden; margin-bottom: 20px;'>Placeholder</div>", unsafe_allow_html=True)
         else:
             st.write("No games available for this category.")
 
@@ -158,8 +160,8 @@ if not st.session_state.submitted:
     st.write("Before we get started, we'd like to know a little more about you.")
 
     with st.form("user_info_form"):
-        age = st.number_input("Please enter your age:", min_value=1, max_value=120, label_visibility="visible")
-        gaming_hours = st.number_input("How many hours do you spend gaming each week?", min_value=0, max_value=15 if age < 17 else 168, label_visibility="visible")
+        age = st.number_input("Please enter your age:", min_value=1, max_value=120)
+        gaming_hours = st.number_input("How many hours do you spend gaming each week?", min_value=0, max_value=15 if age < 17 else 168)
         
         preferences = st.multiselect(
             "Select your game preferences:",
@@ -178,8 +180,7 @@ if not st.session_state.submitted:
                 st.session_state.gaming_hours = gaming_hours
                 st.session_state.preferences = preferences
                 st.session_state.guardian_confirmed = True
-                st.session_state.display_main = True  # Trigger the main page display
+                st.rerun()
 
-if st.session_state.submitted and st.session_state.guardian_confirmed and st.session_state.display_main:
+if st.session_state.submitted and st.session_state.guardian_confirmed:
     display_main_page()
-    st.session_state.display_main = False  # Reset the flag
