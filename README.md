@@ -2,6 +2,22 @@
 ## Steam Content-Based RS
 ![intro](images/social-og.jpg)
 
+## How to run
+1. Clone the repository
+```bash
+git clone https://github.com/Ron-McArdle/NextPlay.git
+```
+
+2. Install the requierements
+```bash
+pip install -r requirements.txt
+```
+
+3. Run the app
+```bash
+streamlit run home.py
+```
+
 ## Introduction
 As the gaming industry continues to experience rapid growth, driven by the vast array of games available worldwide, the sheer abundance of options presents a challenge for gamers in selecting which game to play. In response to this, global gaming companies would benefit from creating powerful game recommender systems tailored to users' interests amidst the overwhelming array of choices. 
 The implementation of recommender systems by companies has proven to be highly relevant in driving increased sales and enhancing customer satisfaction. By offering personalized recommendations and tailored offers, companies can effectively attract and retain customers. For instance, sending targeted emails with links to new offers or suggestions for movies and TV shows based on individual preferences can significantly engage customers and foster loyalty.
