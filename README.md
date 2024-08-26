@@ -1,3 +1,5 @@
+Deployment: https://nextplay.streamlit.app/
+
 # NextPlay
 ## Steam Content-Based RS
 ![intro](images/social-og.jpg)
